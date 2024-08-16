@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Message App</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #ffffff;
+        height: 100vh;
+        margin: 0;
+        padding: 0;
+      }
+      h1 {
+        text-align: center;
+        padding: 10px 0;
+        margin: 0;
+        background-color: #f0f0f0;
+      }
+      #messages {
+        list-style-type: none;
+        padding: 10px;
+        margin: 0;
+        min-height: 500px;
+        overflow-y: scroll;
+        background: white;
+        border: 1px solid #ccc;
+      }
+      #messages li {
+        padding: 8px 12px;
+        margin-bottom: 10px;
+        max-width: 70%;
+        clear: both;
+        border-radius: 15px;
+      }
+      #messages li.sent {
+        float: right;
+        background-color: #dcf8c6;
+      }
+      #messages li.received {
+        float: left;
+        background-color: #e5e5ea;
+      }
+      .message-input {
+        display: flex;
+        padding: 10px;
+        background-color: #f0f0f0;
+      }
+      #messageInput {
+        flex-grow: 1;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 20px;
+      }
+      #sendButton {
+        padding: 10px 20px;
+        margin-left: 10px;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 20px;
+        cursor: pointer;
+      }
+      .smartphone {
+        position: relative;
+        width: 360px;
+        height: 640px;
+        margin: auto;
+        border: 16px black solid;
+        border-top-width: 60px;
+        border-bottom-width: 60px;
+        border-radius: 36px;
+      }
+      .smartphone:before {
+        content: "";
+        display: block;
+        width: 60px;
+        height: 5px;
+        position: absolute;
+        top: -30px;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #333;
+        border-radius: 10px;
+      }
+      .smartphone:after {
+        content: "";
+        display: block;
+        width: 35px;
+        height: 35px;
+        position: absolute;
+        left: 50%;
+        bottom: -65px;
+        transform: translate(-50%, -50%);
+        background: #333;
+        border-radius: 50%;
+      }
+      .smartphone .content {
+        width: 360px;
+        height: 640px;
+        background: white;
+        display: flex;
+        flex-direction: column;
+      }
+      .username {
+        text-decoration: bold;
+        font-size: 18px;
+        color: green;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="smartphone">
+      <div class="content">
+        <h1>Code Revolt</h1>
+        <ul id="messages"></ul>
+        <div class="message-input">
+          <input
+            id="messageInput"
+            autocomplete="off"
+            placeholder="Type a message..."
+          />
+          <button id="sendButton">Send</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const socket = io();
+      const authToken = localStorage.getItem("authToken");
+
+      function loadMessages(messages) {
+        const messagesList = document.getElementById("messages");
+        messages.forEach((message) => {
+          const listItem = document.createElement("li");
+          listItem.className = message.sent ? "sent" : "received";
+
+          if (!message.sent && message.displayUsername) {
+            const usernameDiv = document.createElement("div");
+            usernameDiv.className = "username";
+            usernameDiv.textContent = message.displayUsername;
+            listItem.appendChild(usernameDiv);
+          }
+
+          const contentDiv = document.createElement("div");
+          contentDiv.textContent = message.content;
+          listItem.appendChild(contentDiv);
+
+          messagesList.appendChild(listItem);
+        });
+        messagesList.scrollTop = messagesList.scrollHeight;
+      }
+
+      fetch("/apis/messages", {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then((messages) => {
+          loadMessages(messages);
+        })
+        .catch((error) => {
+          console.error("Error fetching messages:", error);
+        });
+
+      socket.on("message", (message) => {
+        const messagesList = document.getElementById("messages");
+        const listItem = document.createElement("li");
+        listItem.className = message.sent ? "sent" : "received";
+
+        if (!message.sent && message.displayUsername) {
+          const usernameDiv = document.createElement("div");
+          usernameDiv.className = "username";
+          usernameDiv.textContent = message.displayUsername;
+          listItem.appendChild(usernameDiv);
+        }
+        const contentDiv = document.createElement("div");
+        contentDiv.textContent = message.content;
+        listItem.appendChild(contentDiv);
+
+        messagesList.appendChild(listItem);
+        messagesList.scrollTop = messagesList.scrollHeight;
+      });
+
+      document.getElementById("sendButton").onclick = () => {
+        const messageInput = document.getElementById("messageInput");
+        const message = messageInput.value;
+        if (message) {
+          socket.emit("chatMessage", authToken, message);
+          messageInput.value = "";
+        }
+      };
+
+      document
+        .getElementById("messageInput")
+        .addEventListener("keypress", (e) => {
+          if (e.key === "Enter") {
+            document.getElementById("sendButton").click();
+          }
+        });
+    </script>
+  </body>
+</html>

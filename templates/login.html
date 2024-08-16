@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login Page</title>
+    <style>
+      body {
+        height: 100vh;
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background-color: #f2f2f2;
+      }
+
+      .login-container {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        width: 320px;
+        height: 600px;
+        text-align: center;
+        display: flex;
+        justify-content: center;
+        flex-direction: column;
+      }
+
+      h2 {
+        margin-bottom: 20px;
+        color: #333;
+      }
+
+      .input-group {
+        margin-bottom: 15px;
+        text-align: left;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 5px;
+        color: #333;
+      }
+
+      input {
+        width: 100%;
+        padding: 8px;
+        box-sizing: border-box;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+
+      button {
+        width: 100%;
+        padding: 10px;
+        background-color: #4caf50;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background-color: #45a049;
+      }
+      .smartphone {
+        position: relative;
+        width: 360px;
+        height: 640px;
+        margin: auto;
+        border: 16px black solid;
+        border-top-width: 60px;
+        border-bottom-width: 60px;
+        border-radius: 36px;
+      }
+
+      /* The horizontal line on the top of the device */
+      .smartphone:before {
+        content: "";
+        display: block;
+        width: 60px;
+        height: 5px;
+        position: absolute;
+        top: -30px;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #333;
+        border-radius: 10px;
+      }
+
+      /* The circle on the bottom of the device */
+      .smartphone:after {
+        content: "";
+        display: block;
+        width: 35px;
+        height: 35px;
+        position: absolute;
+        left: 50%;
+        bottom: -65px;
+        transform: translate(-50%, -50%);
+        background: #333;
+        border-radius: 50%;
+      }
+
+      /* The screen (or content) of the device */
+      .smartphone .content {
+        width: 360px;
+        height: 640px;
+        background: white;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="smartphone">
+      <div class="content">
+        <div class="login-container">
+          <h2>Login</h2>
+          <form id="loginForm" onsubmit="return validateForm(event)">
+            <div class="input-group">
+              <label for="username">Username</label>
+              <input type="text" id="username" name="username" required />
+            </div>
+            <div class="input-group">
+              <label for="password">Password</label>
+              <input type="password" id="password" name="password" required />
+            </div>
+            <p>
+              Don't have an account?
+              <a href="signup">Sign Up</a>
+            </p>
+            <button type="submit">Login</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    <script>
+      async function validateForm(event) {
+        event.preventDefault(); // Prevent the default form submission
+
+        var username = document.getElementById("username").value;
+        var password = document.getElementById("password").value;
+
+        if (username === "" || password === "") {
+          alert("Both fields are required!");
+          return false;
+        }
+
+        try {
+          const response = await fetch("/apis/login", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ username, password }),
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            // Assuming the token is in the response data
+            const token = data.token;
+
+            // Store the token in local storage
+            localStorage.setItem("authToken", token);
+
+            // Redirect or perform any other actions upon successful login
+            alert("Login successful!");
+            window.location.href = "/message";
+            console.log("Token:", token);
+          } else {
+            // Handle errors returned from the server
+            const errorData = await response.json();
+            alert(`Error: ${errorData.error}`);
+          }
+        } catch (error) {
+          console.error("Error:", error);
+          alert("An error occurred. Please try again.");
+        }
+
+        return false; // Prevent the default form submission
+      }
+    </script>
+  </body>
+</html>
